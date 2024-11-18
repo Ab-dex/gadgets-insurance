@@ -52,17 +52,17 @@ Using [HTTPie](https://httpie.org/) here is a how you can register a new user an
 Register a new user.
 
 ```bash
-$ http POST :5000/api/registerUser username=steven password=pass email=szgaljic@jahnelgroup.com
+$ http POST :5000/api/registerUser username=David password=pass email=a@mail.com
 HTTP/1.0 201 CREATED
 Content-Length: 57
 Content-Type: application/json
 Date: Tue, 09 Jul 2019 01:38:38 GMT
-Location: http://localhost:5000/users/steven
+Location: http://localhost:5000/users/david
 Server: Werkzeug/0.15.4 Python/3.7.3
 
 {
-    "email": "szgaljic@jahnelgroup.com", 
-    "username": "steven"
+    "email": "a@mail.com", 
+    "username": "123456"
 }
 ```
 
@@ -71,7 +71,7 @@ Server: Werkzeug/0.15.4 Python/3.7.3
 Acquire a token.
 
 ```bash
-$ http -asteven:pass GET http://localhost:5000/api/auth/token
+$ http -adavid:pass GET http://localhost:5000/api/auth/token
 HTTP/1.0 200 OK
 Content-Length: 193
 Content-Type: application/json
@@ -97,8 +97,8 @@ Date: Tue, 09 Jul 2019 01:43:30 GMT
 Server: Werkzeug/0.15.4 Python/3.7.3
 
 {
-    "email": "szgaljic@jahnelgroup.com", 
-    "username": "steven"
+    "email": "a@mailcom", 
+    "username": "123456"
 }
 ```
 
@@ -109,7 +109,7 @@ Flask shell gives you a python interpreter shell with the context of your applic
 ```bash
 $ flask shell
 >>> from werkzeug.security import generate_password_hash
->>> db.session.add(User(username='steven', email='steven@example.com', password=generate_password_hash('pass')))
+>>> db.session.add(User(username='david', email='a@mail.com', password=generate_password_hash('pass')))
 >>> db.session.commit()
 >>> exit()
 ```
