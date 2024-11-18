@@ -30,6 +30,14 @@ def unauthorized_error(error):
     }
     return jsonify(response), 401
 
+@errors_bp.app_errorhandler(403)
+def unauthorized_error(error):
+    response = {
+        "error": "Forbidden",
+        "message": str(error.description) if error.description else "You are not allowed to make this request"
+    }
+    return jsonify(response), 403
+
 
 @errors_bp.app_errorhandler(409)
 def unauthorized_error(error):

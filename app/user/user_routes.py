@@ -17,7 +17,6 @@ from werkzeug.exceptions import BadRequest
 # Get all agents
 #
 @bp.route('/agents')
-# @filters.is_admin
 # @jwt_required()
 def get_agents():
     agents = Agent.query.all()
@@ -50,20 +49,22 @@ def remove_agent(id):
 # Agent requests approval from distributor
 #
 
-@bp.post('/agents/<string:agent_id>/request-approval')
-# @jwt_required()
-def request_approval(agent_id):
+@bp.post('/agents/request-approval')
+@bp.post('/agents/request-approval/<string:agent_id>')
+@jwt_required()
+def request_approval(agent_id = None):
 
-    # current_user = get_jwt_identity()
-    
+    current_user = get_jwt_identity()
 
-    # if current_user['role'] != 'agent' or current_user['id'] != agent_id:
-    #     return jsonify({"errors": "Unauthorized", "success": False}), 403
+    agent_email = current_user['email']
+
+    if current_user['role'] != 'admin' and agent_id:
+        abort(403, description="Forbidden request")
+
+    if current_user['role'] != 'agent' or agent_email == None:
+        abort(401, description="Unauthorized request")
 
     distributor_id = request.json.get('distributor_id')
-
-    # if current_user['id'] != agent_id:
-    #     return jsonify({"errors": "Unauthorized", "success": False}), 403
     
     message = user_service.request_approval(agent_id, distributor_id)
 
@@ -73,24 +74,6 @@ def request_approval(agent_id):
         "message": message
     }), 200
 
-
-
-#
-# Get all Distributors data
-#
-@bp.get('/admin/distributors')
-# @filters.is_admin
-@jwt_required()
-def get_distributors():
-    try:
-        
-        data = user_service.get_all_distributors()
-
-        return jsonify({"data": data, "success": True, "message": "Distributors Retrieved Successfully!"}), 200
-
-    except ValidationError as err:
-        current_app.logger.info(err.messages)
-        return jsonify({"errors": err.messages, "success": False}), 400
 
 #
 # Get all available distributor summary
@@ -114,7 +97,6 @@ def get_distributors_summery():
 # Get one distributor
 #
 @bp.get('/distributors/<string:id>')
-# @filters.is_admin
 @jwt_required()
 def get_user_by_id(id):
     try:
@@ -134,8 +116,6 @@ def get_user_by_id(id):
 @bp.get('/distributors/agent-requests/<string:request_id>')
 @jwt_required()
 def get_all_agent_requests(request_id=None):
-
-    print(request_id)
 
     current_user = get_jwt_identity()
 
@@ -177,9 +157,26 @@ def update_agent_request(request_id):
 
     except ValidationError as err:
         current_app.logger.info(err.messages)
-        return jsonify({"errors": err.messages, "success": False}), 400
+        abort(400, description=err.messages)
 
     except BadRequest as e:
         abort(400, description="Body cannot be empty!!")
         
 
+
+#
+# Get all Distributors data
+#
+@bp.get('/admin/distributors')
+# @filters.is_admin
+@jwt_required()
+def get_distributors():
+    try:
+        
+        data = user_service.get_all_distributors()
+
+        return jsonify({"data": data, "success": True, "message": "Distributors Retrieved Successfully!"}), 200
+
+    except ValidationError as err:
+        current_app.logger.info(err.messages)
+        return jsonify({"errors": err.messages, "success": False}), 400
