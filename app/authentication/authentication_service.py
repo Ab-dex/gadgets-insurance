@@ -23,7 +23,9 @@ def sendOtp(email):
     refresh_token = create_refresh_token(email)
     return {"accessToken": access_token, "user": user_data, "refreshToken": refresh_token}
 
-
+# 
+# Register an Agent
+# 
 def registerUser(user, password):
     user.id = None
 
@@ -34,8 +36,18 @@ def registerUser(user, password):
 
     user_schema = AgentSchema()
     user_data = user_schema.dump(user)
+
+    access_token, refresh_token = generate_auth_token(user_data)
+
+    user_data['access_token'] = access_token
+    user_data['refresh_token'] = refresh_token
+    
     return user_data
 
+
+# 
+# Register a distributor
+# 
 def registerDistributor(distributor, password):
     distributor.id = None
 
@@ -50,6 +62,11 @@ def registerDistributor(distributor, password):
 
     return {"accessToken": access_token, "user": distributor_data, "refreshToken": refresh_token}
 
+
+# 
+# Login agent
+# 
+
 def loginUser(user):
     
     user_email = user.get('email')
@@ -61,14 +78,18 @@ def loginUser(user):
 
     return {"accessToken": access_token, "user": user_data, "refreshToken": refresh_token}
 
+
 #
 # Generates a new authentication token.
 #
 def generate_auth_token(user_data, access_only=False):
     access_token = create_access_token({"email": user_data['email'], "role": user_data.get('account_type')})
+
     refresh_token = None
+
     if not access_only:
         refresh_token = create_refresh_token({"email": user_data['email'], "role": user_data.get('account_type')})
+
     return access_token, refresh_token
 
 

@@ -31,6 +31,7 @@ class Agent(BaseModel):
     kyc_document_url = db.Column(db.String(255))
     is_approved = db.Column(db.Boolean(), default=False)
     is_active = db.Column(db.Boolean(), default=False)
+    account_type  = db.Column(db.Integer, default=1)
 
     distributor_id = db.Column(db.String(36), db.ForeignKey('distributors.id'))
 
@@ -81,6 +82,7 @@ class Distributor(BaseModel):
     kyc_document_url = db.Column(db.String(255))
     business_document_url = db.Column(db.String(255))
     is_active = db.Column(db.Boolean(), default=False)
+    account_type  = db.Column(db.Integer, default=2)
 
     agents = db.relationship('Agent', backref='distributor', lazy=True)
     # purchases = db.relationship('Purchase', backref='distributor', lazy=True)
@@ -206,6 +208,7 @@ class InsuranceCompany(BaseModel):
     contact_phone = db.Column(db.String(64), nullable=False)
     kyb_status = db.Column(db.String(20), default="pending")
     is_verified = db.Column(db.Boolean(), default=False)
+    account_type  = db.Column(db.Integer, default=3)
 
     # policies = relationship('Policy', backref='insurance_company', lazy=True)
 

@@ -21,11 +21,11 @@ def test_auth():
     return jsonify({'message': 'Phonetheft api server works fine',})
 
 
-@bp.route('/auth/token')
-@auth.login_required
-def get_auth_token():
-    token = auth_service.generate_auth_token(600)
-    return jsonify({'token': token.decode('ascii'), 'duration': 600})
+# @bp.route('/auth/token')
+# @auth.login_required
+# def get_auth_token():
+#     token = auth_service.generate_auth_token(600)
+#     return jsonify({'token': token.decode('ascii'), 'duration': 600})
 
 @bp.route('/auth/refresh')
 @jwt_required(refresh=True)
@@ -33,12 +33,6 @@ def get_new_access_token():
     identity = get_jwt_identity()
     access_token, _ = auth_service.generate_auth_token(identity, True)
     return jsonify({'accessToken': access_token, 'success': True})
-
-# @bp.route('/auth/whoami')
-# @jwt_required(refresh=True)
-# def get_details():
-#     accss = auth_service.generate_auth_token(600)
-#     return jsonify({'token': token.decode('ascii'), 'duration': 600})
 
 
 #
@@ -62,7 +56,7 @@ def register_dealer():
 
 
 #
-# Register a new dealer
+# Onboard a new distributor
 #
 # @bp.post('/auth/onboarding')
 # def onboarding():
@@ -79,6 +73,7 @@ def register_dealer():
 #     except ValidationError as err:
 #         current_app.logger.info(err.messages)
 #         return jsonify({"errors": err.messages, "success": False}), 400
+
 
 #
 # Send Otp to email
@@ -101,7 +96,7 @@ def send_otp():
 
 
 #
-# Register a new user
+# Register a new agent
 #
 @bp.post('/auth/register')
 def create_user():
