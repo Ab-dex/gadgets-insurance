@@ -1,7 +1,7 @@
 from app import db
 from flask import current_app, abort
 from app.models import Agent, Distributor, ApprovalRequest
-from app.schemas import AgentSchema, DistributorSchema, SummaryDistributorSchema
+from app.schemas import AgentSchema, DistributorSchema, SummaryDistributorSchema, RequestSchema, AgentRequestStatusEnum
 
 #
 # Get user by username
@@ -39,6 +39,18 @@ def get_distributor(id):
     return AgentSchema().dump(distributor)
 
 # 
+#  Get Distributor by email
+#   
+def get_distributor_by_email(distributor_email):
+    # Retrieve distributor by email
+    distributor_data = Distributor.get_user_by_email(distributor_email)
+    
+    if not distributor_data:
+        abort(404, description="Distributor not found")
+
+    return distributor_data
+
+# 
 #  Get Agent by id
 #   
 def get_agent(id):
@@ -47,6 +59,23 @@ def get_agent(id):
         abort(404, description=f"Agent not found.")
     
     return AgentSchema().dump(agent)
+
+# 
+# check if agent is attached to a distributor already. Return error if linked else return agent instance
+# 
+
+def check_agent_distributor_status(agent_id):
+
+    agent = Agent.get_user_by_id(agent_id)
+
+    if not agent:
+        abort(404, description=f"Agent not found.")
+
+    if agent.distributor_id is not None:
+        abort(409, description=f"Agent is not allowed to request approval from multiple Distributors.")
+
+    return agent
+
 
 # 
 #  Get all Distributors
@@ -70,7 +99,7 @@ def get_all_distributors_summary():
 
 
 # 
-#  Agent Request approval from distributo
+#  Agent Request approval from distributor
 #   
 
 def request_approval(agent_id, distributor_id):
@@ -78,20 +107,15 @@ def request_approval(agent_id, distributor_id):
     # Get the agent's data from the database
     agent = get_agent(agent_id)
     
-    # Get the distributor ID from the request data (assumed to be passed in the request body)
-    
     distributor = get_distributor(distributor_id)
-    
-    if not distributor:
-        return jsonify({"errors": "Distributor not found", "success": False}), 404
+
+    agent = check_agent_distributor_status(agent_id)
 
     # Check if there's already a pending request
     existing_request = ApprovalRequest.get_pending_request(agent_id, distributor_id)
+
     if existing_request:
-        return jsonify({
-            "errors": "There is already a pending request for approval with this distributor.",
-            "success": False
-        }), 409  # Conflict
+        abort(409, description=f"There is already a pending request for approval with this distributor.")
     
     # Create the new approval request
     approval_request = ApprovalRequest(agent_id=agent_id, distributor_id=distributor_id)
@@ -101,22 +125,48 @@ def request_approval(agent_id, distributor_id):
 
 
 # 
-#  Distributor Approve an agent by  usingg their id
+#  Retrieve all requests made to a distributor from agents
 #   
 
-def approve_and_add_agent(distributor_id, agent_id):
+def get_agent_requests(distributor_email, request_id=None):
 
-    distributor = get_distributor(distributor_id)
+    distributor_id = get_distributor_by_email(distributor_email).id
 
-    agent = Agent.get_user_by_id(agent_id)
+    if not request_id:
 
-    if agent.distributor_id is not None:
-        abort(409, description=f"Not allowed to request approval from multiple Distributors. Please resign yourself from current distributor first")
+        all_requests = ApprovalRequest.query.filter_by(distributor_id=distributor_id)
 
-    agent.distributor_id = distributor_id
+        return RequestSchema().dump(all_requests, many=True)
 
-    agent.save()
+    request = ApprovalRequest.query.filter_by(id=request_id, distributor_id=distributor_id).first()
+    
+    if not request:
+        abort(403, description="No Data to Display")
+    
+    # Serialize the request data
+    formatted_request = RequestSchema().dump(request)
+        
 
-    return  ''
+    return formatted_request
+
+
+def approve_and_add_agent(request_id, distributor_email, status):
+
+    distributor_id = get_distributor_by_email(distributor_email).id
+
+    approval_request = ApprovalRequest.get_request_by_id(request_id)
+
+    agent = check_agent_distributor_status(approval_request.agent_id)
+
+    approval_request.status = AgentRequestStatusEnum[status]
+
+    approval_request.save()
+
+    if status == 'ACCEPTED':
+
+        agent.distributor_id = distributor_id
+        agent.save()
+
+    return  f"Agent request '{AgentRequestStatusEnum[status]}' successfully!"
 
     

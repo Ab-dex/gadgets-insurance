@@ -5,14 +5,14 @@
 #
 from app.user import bp
 
-from flask import jsonify, abort, request, g, current_app
+from flask import jsonify, abort, request, g, current_app, abort
 from marshmallow import ValidationError
 from app import filters, db
 from app.models import Agent, Distributor
-from app.schemas import AgentSchema
+from app.schemas import AgentSchema, AgentRequestStatusSchema
 from app.user import user_service
-from flask_jwt_extended import jwt_required
-
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from werkzeug.exceptions import BadRequest
 #
 # Get all agents
 #
@@ -27,7 +27,7 @@ def get_agents():
 #
 # Get agent by username
 #
-@bp.route('/agents/<string:id>')
+@bp.get('/agents/<string:id>')
 def get_agent_by_id(id):
     agent = user_service.get_agent(id)
 
@@ -44,6 +44,11 @@ def remove_agent(id):
 
     user_service.delete_by_username(id)
     return '', 200
+
+
+#
+# Agent requests approval from distributor
+#
 
 @bp.post('/agents/<string:agent_id>/request-approval')
 # @jwt_required()
@@ -70,11 +75,10 @@ def request_approval(agent_id):
 
 
 
-
 #
 # Get all Distributors data
 #
-@bp.route('/admin/distributors')
+@bp.get('/admin/distributors')
 # @filters.is_admin
 @jwt_required()
 def get_distributors():
@@ -92,7 +96,7 @@ def get_distributors():
 # Get all available distributor summary
 #
 
-@bp.route('/distributors')
+@bp.get('/distributors')
 
 def get_distributors_summery():
     try:
@@ -122,22 +126,60 @@ def get_user_by_id(id):
         current_app.logger.info(err.messages)
         return jsonify({"errors": err.messages, "success": False}), 400
 
-#
-# Distributor approve agent
-#
-@bp.put('/distributors/<string:id>/approve-agent')
-# @filters.is_admin
-@jwt_required()
-def add_agent_to_distributor(id):
-    try:
-        body_data = request.get_json()
-        agent_id = body_data['agent_id']
-        if not agent_id:
-            return jsonify({"errors": "Agent ID is required", "success": False}), 400
-        data = user_service.approve_and_add_agent(id, agent_id)
 
+#
+# Distributor gets pending agent approval
+#
+@bp.get('/distributors/agent-requests')
+@bp.get('/distributors/agent-requests/<string:request_id>')
+@jwt_required()
+def get_all_agent_requests(request_id=None):
+
+    print(request_id)
+
+    current_user = get_jwt_identity()
+
+    distributor_email = current_user['email']
+
+    data = None
+
+    if request_id:
+        # If request_id is provided, fetch the specific request
+        data = user_service.get_agent_requests(distributor_email, request_id)
+    
+    else:
+        data = user_service.get_agent_requests(distributor_email)
+
+    return jsonify({ "success": True, "message": "Data retrieved Successfully", "data": data}), 200
+
+
+#
+# Update specific agent request
+#
+@bp.put('/distributors/agent-requests/<string:request_id>')
+@jwt_required()
+def update_agent_request(request_id):
+
+    try:
+
+        input_data = request.get_json()
+
+        # Verify Email
+        validated_data = AgentRequestStatusSchema().load(input_data)
+
+        current_user = get_jwt_identity()
+
+        distributor_email = current_user['email']
+
+        data = user_service.approve_and_add_agent(request_id, distributor_email, validated_data['status'])
+        
         return jsonify({ "success": True, "message": "Agent Approved Successfully!"}), 200
 
     except ValidationError as err:
         current_app.logger.info(err.messages)
         return jsonify({"errors": err.messages, "success": False}), 400
+
+    except BadRequest as e:
+        abort(400, description="Body cannot be empty!!")
+        
+

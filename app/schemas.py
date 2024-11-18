@@ -1,9 +1,17 @@
 from app import ma
 from flask import current_app
-from app.models import Agent, Distributor, Purchase
+from app.models import Agent, Distributor, Purchase, ApprovalRequest
 from marshmallow import fields, validates, validates_schema, ValidationError
 from werkzeug.security import check_password_hash
 import re
+from enum import Enum
+
+
+# Define the Enum for valid status values
+class AgentRequestStatusEnum(Enum):
+    PENDING = "pending"
+    REJECTED = "rejected"
+    ACCEPTED = "accepted"
 
 
 #
@@ -47,6 +55,16 @@ class PurchaseSchema(ma.SQLAlchemyAutoSchema):
         load_instance=True
 
 #
+# Response representation of a Approval Requests
+#
+class RequestSchema(ma.SQLAlchemyAutoSchema):
+    agent = fields.Nested('AgentSchema', exclude=['otp_verified', 'distributor'])
+
+    class Meta:
+        model = ApprovalRequest
+        load_instance=True
+
+#
 # Validates user registration input.
 #
 class AgentOtpSchema(ma.SQLAlchemyAutoSchema):
@@ -70,6 +88,32 @@ class AgentOtpSchema(ma.SQLAlchemyAutoSchema):
 
         if foundError:
             raise valerr
+
+
+# Agent request status validation schema
+class AgentRequestStatusSchema(ma.SQLAlchemyAutoSchema):
+    status = fields.String(required=True)
+
+    @validates_schema
+    def validate_input(self, user_input, **kwargs):
+        # Create error instance
+        valerr = ValidationError({})
+        foundError = False
+
+        # Validate the 'status' field
+        status = user_input.get("status")
+
+        if not status or status == "":
+            valerr.messages["status"] = "Status is required!"
+            foundError = True
+        elif status not in AgentRequestStatusEnum.__members__:
+            valerr.messages["status"] = f"Invalid status"
+            foundError = True
+
+        # If errors found, raise the ValidationError with collected messages
+        if foundError:
+            raise valerr
+
 
 #
 # Validates user registration input.

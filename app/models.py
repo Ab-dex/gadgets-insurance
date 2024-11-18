@@ -97,7 +97,7 @@ class Distributor(BaseModel):
 
 
     @classmethod
-    def get_dealer_by_id(cls, id):
+    def get_user_by_id(cls, id):
         return cls.query.filter_by(id=id).first()
 
     def save(self):
@@ -107,10 +107,6 @@ class Distributor(BaseModel):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
-        
-    @classmethod
-    def get_user_by_id(cls, id):
-        return cls.query.filter_by(id=id).first()
 
     @classmethod
     def get_user_by_email(cls, email):
@@ -183,6 +179,10 @@ class ApprovalRequest(BaseModel):
 
     def __repr__(self):
         return f"<ApprovalRequest agent_id={self.agent_id}, distributor_id={self.distributor_id}, status={self.status}>"
+
+    @classmethod
+    def get_request_by_id(cls, id):
+        return cls.query.filter_by(id=id).first()
 
     def save(self):
         db.session.add(self)

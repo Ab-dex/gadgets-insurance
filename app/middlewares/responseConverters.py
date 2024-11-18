@@ -15,7 +15,6 @@ def bad_request_error(error):
 # 404 Not Found Error Handler
 @errors_bp.app_errorhandler(404)
 def not_found_error(error):
-    print("I asfd here")
     response = {
         "error": "Not Found",
         "message": str(error.description) if error.description else "The requested resource could not be found."
