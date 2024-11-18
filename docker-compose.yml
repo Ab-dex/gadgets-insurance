@@ -1,0 +1,17 @@
+version: "3"
+services:
+  db:
+    image: mysql:latest
+    container_name: pt-db
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: "strongpassword"
+      MYSQL_DATABASE: "phonetheft_api"
+
+    volumes:
+      - pt-db:/var/lib/mysql
+
+volumes:
+  pt-db:
+
