@@ -32,6 +32,15 @@ def get_agent_by_id(id):
 
     return jsonify({"data": agent, "success": True, "message": "Agent Retrieved Successfully!"}), 200
 
+#
+# Get agent by username
+#
+@bp.get('/profile/<string:id>')
+def get_profile_by_id(id):
+    agent = user_service.get_agent(id)
+
+    return jsonify({"data": agent, "success": True, "message": "Agent Retrieved Successfully!"}), 200
+
 
 #
 # Remove agent by id
@@ -98,7 +107,7 @@ def get_distributors_summery():
 #
 @bp.get('/distributors/<string:id>')
 @jwt_required()
-def get_user_by_id(id):
+def get_distributor_by_id(id):
     try:
         data = user_service.get_distributor(id)
 
@@ -115,7 +124,7 @@ def get_user_by_id(id):
 @bp.get('/distributors/agent-requests')
 @bp.get('/distributors/agent-requests/<string:request_id>')
 @jwt_required()
-def get_all_agent_requests(request_id=None):
+def get_agent_requests(request_id=None):
 
     current_user = get_jwt_identity()
 

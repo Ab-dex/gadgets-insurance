@@ -1,11 +1,10 @@
 from app.purchase import bp
 
-from flask import request, url_for, current_app, jsonify, abort
+from flask import request, current_app, jsonify
 from marshmallow import ValidationError
-from app.schemas import PurchaseSchema
-from sqlalchemy.exc import SQLAlchemyError
 from app.purchase import purchase_service
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from utils.random_secret import generate_secret
 
 
 #
@@ -19,12 +18,12 @@ def register_buyer():
     agent_id = purchase_service.get_agent_id_from_user(user_identity['email'])
 
     try:
-        user_info = request.get_json()
-        user_info['agent_id'] = agent_id
-        user_info['purchase_secret'] = "A1B3"
+        purchase_info = request.get_json()
+        purchase_info['agent_id'] = agent_id
+        purchase_info['purchase_secret'] = generate_secret(8)
         
         
-        response = purchase_service.registerNewPurchase(user_info)
+        response = purchase_service.registerNewPurchase(purchase_info)
 
         return jsonify({ "success": True, "message": "Working", 'data': response})
 

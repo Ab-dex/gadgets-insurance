@@ -1,7 +1,7 @@
 from app import db
 from flask import current_app, abort
-from app.models import Agent, Distributor, ApprovalRequest
-from app.schemas import AgentSchema, DistributorSchema, SummaryDistributorSchema, RequestSchema, AgentRequestStatusEnum
+from app.models import Agent, Distributor, ApprovalRequest, Profile
+from app.schemas import ProfileSchema, AgentSchema, DistributorSchema, SummaryDistributorSchema, RequestSchema, AgentRequestStatusEnum
 
 #
 # Get user by username
@@ -22,11 +22,18 @@ def save(user):
 #
 # Delete a user by username
 #
-def delete_by_username(username):
-    user = get_by_username(username)
-    db.session.delete(user)
-    db.session.commit()
-    return True
+def create_profile(user_details):
+
+    profile = Profile(**user_details)
+
+    profile.save()
+
+    profile_schema = ProfileSchema()
+    profile_data = profile_schema.dump(profile)
+
+    print(profile_data)
+    
+    return profile_data
 
 # 
 #  Get Distributor by id

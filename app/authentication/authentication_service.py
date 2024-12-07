@@ -7,7 +7,7 @@ from itsdangerous import (
     SignatureExpired,
     TimedSerializer
 )
-from app.schemas import AgentSchema
+from app.schemas import AgentSchema, InsuranceCompanySchema, DistributorSchema
 from app.models import Agent
 from datetime import timedelta
 from flask_jwt_extended import create_access_token, create_refresh_token
@@ -38,11 +38,8 @@ def registerUser(user, password):
     user_data = user_schema.dump(user)
 
     access_token, refresh_token = generate_auth_token(user_data)
-
-    user_data['access_token'] = access_token
-    user_data['refresh_token'] = refresh_token
     
-    return user_data
+    return {"accessToken": access_token, "user": user_data, "refreshToken": refresh_token}
 
 
 # 
@@ -56,11 +53,28 @@ def registerDistributor(distributor, password):
 
     distributor.save()
 
-    distributor_schema = AgentSchema()
+    distributor_schema = DistributorSchema()
     distributor_data = distributor_schema.dump(distributor)
     access_token, refresh_token = generate_auth_token(distributor_data)
 
     return {"accessToken": access_token, "user": distributor_data, "refreshToken": refresh_token}
+
+# 
+# Register a innsurance company
+# 
+def registerInsuranceCompany(insurance_company, password):
+    insurance_company.id = None
+
+    # Encrypt password
+    insurance_company.set_password(password)
+
+    insurance_company.save()
+
+    insurance_schema = InsuranceCompanySchema()
+    insurance_data = insurance_schema.dump(insurance_company)
+    access_token, refresh_token = generate_auth_token(insurance_data)
+    
+    return {"accessToken": access_token, "user": insurance_data, "refreshToken": refresh_token}
 
 
 # 

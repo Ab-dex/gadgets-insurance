@@ -8,10 +8,11 @@ from app.authentication import bp
 from flask import jsonify
 from app import auth
 from app.authentication import authentication_service as auth_service
+from app.user import user_service
 from flask import request, url_for, current_app, jsonify, abort
 from marshmallow import ValidationError
 from flask_jwt_extended import jwt_required, get_jwt_identity, current_user
-from app.schemas import AgentRegistrationSchema, AgentLoginSchema, AgentOtpSchema, DistributorRegistrationSchema
+from app.schemas import ProfileSchema, AgentRegistrationSchema, AgentLoginSchema, AgentOtpSchema, DistributorRegistrationSchema, InsuranceCompanyRegistrationSchema
 #
 # Generate a new API token
 #
@@ -36,7 +37,7 @@ def get_new_access_token():
 
 
 #
-# Register a new dealer
+# Register a new distributor
 #
 @bp.post('/auth/distributor/register')
 def register_dealer():
@@ -46,6 +47,12 @@ def register_dealer():
         # Verify Email
         distributor = DistributorRegistrationSchema().load(distributorInfo)
         distributor_data = auth_service.registerDistributor(distributor, distributorInfo.get('password'))
+
+        profile_schema = ProfileSchema()
+
+        result = profile_schema.load(distributor_data['user'])
+
+        profile_data = user_service.create_profile(result)
 
         
         return jsonify({"data": distributor_data, "success": True, "message": "Account Created Successfully!"}), 201
@@ -110,6 +117,12 @@ def create_user():
         user = AgentRegistrationSchema().load(userinfo)
         user_data = auth_service.registerUser(user, userinfo.get('password'))
 
+        profile_schema = ProfileSchema()
+
+        result = profile_schema.load(user_data['user'])
+
+        profile_data = user_service.create_profile(result)
+
         
         return jsonify({"data": user_data, "success": True, "message": "Account Created Successfully!"}), 201
 
@@ -126,12 +139,12 @@ def register_admin():
     try:
         admininfo = request.get_json()
 
-        if not userinfo:
+        if not admininfo:
             abort(400, description="All fields are required.")
 
         # Verify Username
-        user = AgentRegistrationSchema().load(userinfo)
-        user_data = auth_service.registerUser(user, userinfo.get('password'))
+        user = AgentRegistrationSchema().load(admininfo)
+        user_data = auth_service.registerUser(user, admininfo.get('password'))
 
         
         return jsonify({"data": user_data, "success": True, "message": "Account Created Successfully!"}), 201
@@ -159,3 +172,39 @@ def login_user():
     except ValidationError as err:
         current_app.logger.info(err.messages)
         return jsonify({"errors": err.messages, "success": False}), 400
+    
+
+#
+# Register a new insurance company
+#
+@bp.post('/auth/insurance/register')
+def register_insurance_company():
+    try:
+        # Get JSON data from the request body
+        company_info = request.get_json()
+
+        # Verify the input data using a Schema
+        insurance_company = InsuranceCompanyRegistrationSchema().load(company_info)
+        
+        # Register the insurance company using the service layer
+        company_data = auth_service.registerInsuranceCompany(insurance_company, company_info.get('password'))
+
+        # Create a profile for the company
+        profile_schema = ProfileSchema()
+        result = profile_schema.load(company_data['user'])
+
+        # Create the profile and associate it with the company
+        profile_data = user_service.create_profile(result)
+
+        # Return a successful response with the company data
+        return jsonify({"data": company_data, "success": True, "message": "Insurance Company Registered Successfully!"}), 201
+
+    except ValidationError as err:
+        # Handle validation errors
+        current_app.logger.info(err.messages)
+        return jsonify({"errors": err.messages, "success": False}), 400
+
+    except Exception as e:
+        # Handle any unexpected errors
+        current_app.logger.error(f"Error during registration: {str(e)}")
+        return jsonify({"message": "An error occurred during registration.", "success": False}), 500
