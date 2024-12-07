@@ -1,5 +1,5 @@
 from app import db
-from flask import current_app, abort
+from flask import abort
 from app.models import Agent, Distributor, ApprovalRequest, Profile
 from app.schemas import ProfileSchema, AgentSchema, DistributorSchema, SummaryDistributorSchema, RequestSchema, AgentRequestStatusEnum
 
@@ -34,6 +34,21 @@ def create_profile(user_details):
     print(profile_data)
     
     return profile_data
+
+# Get profile
+def get_profile(id):
+    # Query the Profile model by the provided ID
+    profile = Profile.get_user_by_id(id)
+    
+    if not profile:
+        # If no profile found, raise a 404 error
+        abort(404, description=f"Profile with ID {id} not found.")
+    
+    # Serialize the profile data using ProfileSchema
+    profile_data = ProfileSchema().dump(profile)
+    
+    return profile_data
+
 
 # 
 #  Get Distributor by id

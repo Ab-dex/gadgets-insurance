@@ -13,6 +13,7 @@ from app.schemas import AgentSchema, AgentRequestStatusSchema
 from app.user import user_service
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.exceptions import BadRequest
+from app.authentication.decorators import is_admin
 #
 # Get all agents
 #
@@ -36,8 +37,9 @@ def get_agent_by_id(id):
 # Get agent by username
 #
 @bp.get('/profile/<string:id>')
+@jwt_required()
 def get_profile_by_id(id):
-    agent = user_service.get_agent(id)
+    agent = user_service.get_profile(id)
 
     return jsonify({"data": agent, "success": True, "message": "Agent Retrieved Successfully!"}), 200
 
@@ -89,7 +91,7 @@ def request_approval(agent_id = None):
 #
 
 @bp.get('/distributors')
-
+@is_admin()
 def get_distributors_summery():
     try:
         

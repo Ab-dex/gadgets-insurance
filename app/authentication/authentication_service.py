@@ -5,11 +5,9 @@ from itsdangerous import (
     URLSafeTimedSerializer as Serializer,
     BadSignature,
     SignatureExpired,
-    TimedSerializer
 )
 from app.schemas import AgentSchema, InsuranceCompanySchema, DistributorSchema
 from app.models import Agent
-from datetime import timedelta
 from flask_jwt_extended import create_access_token, create_refresh_token
 
 
@@ -60,7 +58,7 @@ def registerDistributor(distributor, password):
     return {"accessToken": access_token, "user": distributor_data, "refreshToken": refresh_token}
 
 # 
-# Register a innsurance company
+# Register an innsurance company
 # 
 def registerInsuranceCompany(insurance_company, password):
     insurance_company.id = None
